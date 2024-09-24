@@ -1,0 +1,186 @@
+---
+title: "imputeTS"
+author: "Dra. Martha Elva Ramírez Guzmán"
+date: "2024-09-24"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+<!-- # na_mean: Replaces each missing value with the mean of the present values -->
+<!-- # na_locf: Replaces each missing value with the most recent present value prior to it -->
+<!-- # na_kalman: Replaces each missing value with a Kalman smoothing -->
+<!-- # na_seadec: Replaces each missing value with a seasonal decomposition. -->
+<!-- #            The seasonal decomposition is done by stl() from the stats package. -->
+<!-- #            Removes the seasonal component from the time series,  -->
+<!-- #            performs imputation on the deseasonalized -->
+<!-- #            series and afterwards adds the seasonal component again. -->
+<!-- # na_ma: Replaces each missing value with the moving average -->
+<!-- # na_random: Replaces each missing value with a random value -->
+<!-- # na_remove: Removes all missing values -->
+<!-- # na_replace: Replaces each missing value with a specified value -->
+<!-- # na_seasplit: Splits the times series into seasons and afterwards  -->
+<!-- #              performs imputation separately for each of the -->
+<!-- #              resulting time series datasets (each containing the data for one specific season) -->
+<!-- #              the data for one specific season). -->
+```{r, message=FALSE, warning=FALSE}
+# Load libraries
+library(imputeTS)
+library(ggplot2)
+library(dplyr)
+```
+Functions: ggplot_na_imputations for the next types of imputations:
+
+na_mean: Replaces each missing value with the mean of the present values.
+
+na_locf: Replaces each missing value with the most recent present value prior to it.
+
+na_kalman: Replaces each missing value with a Kalman smoothing.
+na_seadec: Replaces each missing value with a seasonal decomposition.
+           The seasonal decomposition is done by stl() from the stats package.
+           Removes the seasonal component from the time series,
+           performs imputation on the deseasonalized
+           series and afterwards adds the seasonal component again.
+           
+na_ma: Replaces each missing value with the moving average.
+
+na_random: Replaces each missing value with a random value.
+
+na_remove: Removes all missing values.
+
+na_replace: Replaces each missing value with a specified value.
+
+na_seasplit: Splits the times series into seasons and afterwards
+             performs imputation separately for each of the
+             resulting time series datasets (each containing the data for one specific season) the data for one specific season).
+# 1.1 Function: ggplot_na_distribution
+```{r}
+x <- stats::ts(c(1:11, 4:9, NA, NA, NA, 11:15, 7:15, 15:6, NA, NA, 2:5, 3:7))
+ggplot_na_distribution(x)
+```
+
+# 1.2 Visualize NAs in tsAirgap 
+
+```{r}
+ggplot_na_distribution(tsAirgap, subtitle = NULL) +
+  ggplot2::theme(plot.title = ggplot2::element_text(hjust = 0.5))
+```
+  
+
+# 2. Function: ggplot_na_ditribution2. For large time series
+
+```{r}
+ggplot_na_distribution2(tsAirgap) +
+  ggplot2::theme(plot.title = ggplot2::element_text(hjust = 0.5)) +
+  ggplot2::theme(plot.subtitle = ggtext::element_markdown(hjust = 0.5))
+```
+
+# 3. Function: ggplot_na_gapsize
+```{r}
+ggplot_na_gapsize(tsNH4, color_total = "grey")
+```
+
+
+# 4. Functions: ggplot_na_imputations for the next types of imputations: 
+# 4.1 na_mean
+
+```{r}
+imp_mean <- na_mean(tsAirgap)
+ggplot_na_imputations(tsAirgap, imp_mean)
+```
+
+```{r}
+imp_mean <- na_mean(tsAirgap)
+ggplot_na_imputations(x_with_na = tsAirgap,
+                      x_with_imputations = imp_mean,
+                      subtitle = NULL) +
+  ggplot2::theme(plot.title = ggplot2::element_text(hjust = 0.5))
+```
+
+# 4.2 na_locf and added ground truth
+```{r}
+imp_locf <- na_locf(tsAirgap)
+ggplot_na_imputations(x_with_na = tsAirgap,
+                      x_with_imputations = imp_locf,
+                      x_with_truth = tsAirgapComplete
+)
+
+imp_locf <- na_locf(tsAirgap)
+ggplot_na_imputations(x_with_na = tsAirgap, x_with_imputations = imp_locf)
+
+```
+
+# 4.3 na_kalman
+```{r}
+imp_kalman <- na_kalman(tsAirgap)
+ggplot_na_imputations(x_with_na = tsAirgap, x_with_imputations = imp_kalman)
+```
+
+# 4.4 na_seadec
+```{r}
+imp_seadec <- na_seadec(tsAirgap) 
+ggplot_na_imputations(x_with_na = tsAirgap, x_with_imputations = imp_seadec) +
+  ggplot2::theme(plot.title = ggplot2::element_text(hjust = 0.5)) +
+  ggplot2::theme(plot.subtitle = ggplot2::element_text(hjust = 0.5))
+```
+
+# 4.5.1 na_ma: Perform imputation with simple moving average
+```{r}
+imp_na_ma<-na_ma(tsAirgap, weighting = "simple")
+ggplot_na_imputations(x_with_na = tsAirgap,
+                      x_with_imputations = imp_na_ma,
+                      subtitle = NULL) +
+  ggplot2::theme(plot.title = ggplot2::element_text(hjust = 0.5))
+```
+
+# 4.5.2: Imputation with EXPONENCIAL weighted moving average window size=6
+```{r}
+imp_na_ma_6<-na_ma(tsAirgap, k = 6)
+ggplot_na_imputations(x_with_na = tsAirgap,
+                      x_with_imputations = imp_na_ma_6,
+                      subtitle = NULL) +
+  ggplot2::theme(plot.title = ggplot2::element_text(hjust = 0.5))
+```
+
+# 4.5.3: Same as example 1, just written with pipe operator
+```{r}
+tsAirgap %>% na_ma(weighting = "simple") %>% 
+  ggplot_na_imputations(x_with_na = tsAirgap,
+                        x_with_imputations = imp_na_ma,
+                        subtitle = NULL) +
+  ggplot2::theme(plot.title = ggplot2::element_text(hjust = 0.5))
+```
+
+# 4.6 na_random
+```{r}
+imp_random <- na_random(tsAirgap)
+ggplot_na_imputations(x_with_na = tsAirgap, x_with_imputations = imp_random)
+```
+
+# 4.7.1 na_replace. Replace all NAs with 0
+# Prerequisite: Create Time series with missing values
+```{r}
+x <- ts(c(2, 3, NA, 5, 6, NA, 7, 8))
+imp_replace<-na_replace(x, fill = 0)
+ggplot_na_imputations(x_with_na = x, x_with_imputations = imp_replace)
+
+x %>% na_replace(fill = 0) %>%
+  ggplot_na_imputations(x_with_na = x, x_with_imputations = imp_replace)
+```
+
+# 4.7.2: Same as example 1, just written with pipe operator
+```{r}
+x <- ts(c(2, 3, NA, 5, 6, NA, 7, 8))
+x %>% na_replace(fill = 3.5) %>%
+  ggplot_na_imputations(x_with_na = x, x_with_imputations = imp_replace)
+```
+
+# 4.8.1 Perform seasonal splitted imputation using algorithm = "interpolation"
+```{r}
+imput_splitted<-na_seasplit(tsAirgap, algorithm = "interpolation") 
+tsAirgap %>%   ggplot_na_imputations(x_with_na = tsAirgap,
+                        x_with_imputations = imput_splitted,
+                        subtitle = NULL) +
+  ggplot2::theme(plot.title = ggplot2::element_text(hjust = 0.5))
+```
