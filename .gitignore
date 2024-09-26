@@ -1,0 +1,13 @@
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+.Renviron
+
+**/renv.lock
+renv/
+.Rproj.user/
+**/.DS_Store
+venv/
+.venv/
+**/.venv/
